@@ -1,45 +1,166 @@
-// Google Apps Script (For No/SerialNo/Mark format)
-function doGet(e) {
-  var action = e.parameter.action;
-  if (action == 'getData') {
-    return ContentService.createTextOutput(JSON.stringify(getData())).setMimeType(ContentService.MimeType.JSON);
-  }
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Marks Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --main-blue: #0062ff; --soft-blue: #eef4ff; --dark-blue: #0046b8; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 800px; text-align: center; }
+        .hidden { display: none !important; }
+        input { padding: 10px; margin: 5px; border: 2px solid #e2e8f0; border-radius: 8px; outline: none; }
+        button { background: var(--main-blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; margin: 5px; }
+        button:hover { background: var(--dark-blue); }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; border-radius: 10px; overflow: hidden; }
+        th { background: var(--main-blue); color: white; padding: 15px; }
+        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        .admin-section { text-align: left; background: #fdfdfd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #edf2f7; }
+        .admin-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .add-btn { background: #10b981; font-size: 0.8rem; margin-top: 10px; }
+        .settings-btn { position: fixed; bottom: 25px; right: 25px; background: #334155; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+    </style>
+</head>
+<body>
 
-function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
-  
-  sheet.clear();
-  // Headers အသစ် - No, Serial No, Mark ပုံစံဖြစ်ဖို့
-  sheet.appendRow(["StudentName", "No", "ExamSerialNo", "Marks"]);
-  
-  data.forEach(function(studentData) {
-    studentData.exams.forEach(function(exam) {
-      // ကျောင်းသားတစ်ယောက်ချင်းစီရဲ့ No, Serial No, Mark တွေကို Row တစ်ခုစီအနေနဲ့ထည့်မယ်
-      sheet.appendRow([studentData.name, exam.no, exam.serial, exam.mark]);
-    });
-  });
-  
-  return ContentService.createTextOutput("Data Saved Successfully").setMimeType(ContentService.MimeType.TEXT);
-}
+    <div id="login-screen" class="card">
+        <h2>Security Access</h2>
+        <input type="password" id="mainPass" placeholder="Password">
+        <br><button onclick="checkLogin()">Login</button>
+    </div>
 
-function getData() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var rows = sheet.getDataRange().getValues();
-  var studentsMap = {};
-  
-  for (var i = 1; i < rows.length; i++) {
-    var name = rows[i][0];
-    // Student data ကို structure ပြန်ဖွဲ့ခြင်း
-    if (!studentsMap[name]) {
-      studentsMap[name] = { name: name, exams: [] };
-    }
-    studentsMap[name].exams.push({
-      no: rows[i][1],
-      serial: rows[i][2],
-      mark: rows[i][3]
-    });
-  }
-  return Object.values(studentsMap);
-}
+    <div id="landing-screen" class="card hidden">
+        <h1>Dashboard</h1>
+        <button onclick="showStudentList()" style="padding: 15px 30px;">အမှတ်စာရင်းကြည့်မယ်</button>
+    </div>
+
+    <div id="list-screen" class="card hidden">
+        <h2>ကျောင်းသားရွေးချယ်ပါ</h2>
+        <div class="grid-container" id="studentBtnGroup"></div>
+        <br><button onclick="goBack('landing-screen')" style="background:#64748b;">နောက်သို့</button>
+    </div>
+
+    <div id="result-screen" class="card hidden">
+        <h2 id="currentStudentName" style="color: var(--main-blue);"></h2>
+        <table>
+            <thead><tr><th>No</th><th>Exam Serial No</th><th>Marks</th></tr></thead>
+            <tbody id="resultBody"></tbody>
+        </table>
+        <div style="height:300px; margin-top:20px;"><canvas id="markChart"></canvas></div>
+        <br><button onclick="goBack('list-screen')" style="background:#64748b;">နောက်သို့</button>
+    </div>
+
+    <div id="admin-screen" class="card hidden">
+        <h2>Admin Management</h2>
+        <div id="adminFields" style="max-height: 500px; overflow-y: auto;"></div>
+        <br>
+        <button onclick="uploadToSheets()">Save & Upload</button>
+        <button onclick="goBack('landing-screen')" style="background:#ef4444;">Cancel</button>
+    </div>
+
+    <div class="settings-btn" onclick="openAdmin()"><i class="fas fa-cog"></i></div>
+
+    <script>
+        const SCRIPT_URL = 'မင်းရဲ့_URL_ဒီမှာထည့်ပါ'; 
+        let students = [
+            { name: "Synwal", exams: [{no:1, serial: "", mark: 0}] },
+            { name: "Myat Min Ko Ko", exams: [{no:1, serial: "", mark: 0}] },
+            { name: "Bhone Myat Aung", exams: [{no:1, serial: "", mark: 0}] }
+        ];
+        let currentChart = null;
+
+        function checkLogin() {
+            if (document.getElementById('mainPass').value === 'math2026') switchScreen('landing-screen');
+            else alert('မှားယွင်းနေပါသည်');
+        }
+
+        function openAdmin() {
+            if (prompt("Admin Password:") === 'bumblebee') {
+                switchScreen('admin-screen');
+                renderAdmin();
+            }
+        }
+
+        // ကျောင်းသားတစ်ယောက်ချင်းစီအတွက် Row အသစ်တိုးပေးတဲ့ Function
+        function addExamRow(sIdx) {
+            const nextNo = students[sIdx].exams.length + 1;
+            students[sIdx].exams.push({no: nextNo, serial: "", mark: 0});
+            renderAdmin();
+        }
+
+        function renderAdmin() {
+            const container = document.getElementById('adminFields');
+            container.innerHTML = '';
+            students.forEach((s, sIdx) => {
+                let html = `<div class="admin-section">
+                    <h4 style="color:var(--main-blue)">${s.name}</h4>`;
+                s.exams.forEach((ex, eIdx) => {
+                    html += `<div class="admin-row">
+                        <span>${ex.no}.</span>
+                        <input type="text" value="${ex.serial}" onchange="updateData(${sIdx}, ${eIdx}, 'serial', this.value)" placeholder="Serial No">
+                        <input type="number" value="${ex.mark}" onchange="updateData(${sIdx}, ${eIdx}, 'mark', this.value)" placeholder="Mark" style="width:80px;">
+                    </div>`;
+                });
+                html += `<button class="add-btn" onclick="addExamRow(${sIdx})">+ Add Exam No. ${s.exams.length + 1}</button></div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        function updateData(sIdx, eIdx, field, val) {
+            if(field === 'mark') students[sIdx].exams[eIdx].mark = parseInt(val) || 0;
+            else students[sIdx].exams[eIdx].serial = val;
+        }
+
+        async function uploadToSheets() {
+            alert("Saving Data...");
+            if(SCRIPT_URL !== 'မင်းရဲ့_URL_ဒီမှာထည့်ပါ') {
+                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(students) });
+            }
+            switchScreen('landing-screen');
+        }
+
+        function showStudentList() {
+            switchScreen('list-screen');
+            const group = document.getElementById('studentBtnGroup');
+            group.innerHTML = '';
+            students.forEach((s, idx) => {
+                const btn = document.createElement('button');
+                btn.innerText = s.name;
+                btn.style.padding = '20px';
+                btn.onclick = () => showResult(idx);
+                group.appendChild(btn);
+            });
+        }
+
+        function showResult(idx) {
+            const s = students[idx];
+            switchScreen('result-screen');
+            document.getElementById('currentStudentName').innerText = s.name;
+            const body = document.getElementById('resultBody');
+            body.innerHTML = '';
+            s.exams.forEach(ex => {
+                body.innerHTML += `<tr><td>${ex.no}</td><td>${ex.serial}</td><td>${ex.mark}</td></tr>`;
+            });
+
+            if (currentChart) currentChart.destroy();
+            currentChart = new Chart(document.getElementById('markChart'), {
+                type: 'bar',
+                data: {
+                    labels: s.exams.map(ex => ex.serial || `No.${ex.no}`),
+                    datasets: [{ label: 'Marks', data: s.exams.map(ex => ex.mark), backgroundColor: '#0062ff' }]
+                },
+                options: { maintainAspectRatio: false }
+            });
+        }
+
+        function switchScreen(id) {
+            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function goBack(id) { switchScreen(id); }
+    </script>
+</body>
+</html>
