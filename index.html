@@ -1,335 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Performance Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --primary: #0061ff;
-            --secondary: #64748b;
-            --bg: #f1f5f9;
-            --white: #ffffff;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
+// Google Apps Script (For No/SerialNo/Mark format)
+function doGet(e) {
+  var action = e.parameter.action;
+  if (action == 'getData') {
+    return ContentService.createTextOutput(JSON.stringify(getData())).setMimeType(ContentService.MimeType.JSON);
+  }
+}
 
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: #1e293b;
-        }
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  
+  sheet.clear();
+  // Headers အသစ် - No, Serial No, Mark ပုံစံဖြစ်ဖို့
+  sheet.appendRow(["StudentName", "No", "ExamSerialNo", "Marks"]);
+  
+  data.forEach(function(studentData) {
+    studentData.exams.forEach(function(exam) {
+      // ကျောင်းသားတစ်ယောက်ချင်းစီရဲ့ No, Serial No, Mark တွေကို Row တစ်ခုစီအနေနဲ့ထည့်မယ်
+      sheet.appendRow([studentData.name, exam.no, exam.serial, exam.mark]);
+    });
+  });
+  
+  return ContentService.createTextOutput("Data Saved Successfully").setMimeType(ContentService.MimeType.TEXT);
+}
 
-        .card {
-            background: var(--white);
-            padding: 2.5rem;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-            width: 90%;
-            max-width: 750px;
-            text-align: center;
-            transition: all 0.4s ease;
-        }
-
-        .hidden { display: none !important; }
-
-        h1, h2 { color: #0f172a; margin-bottom: 1.5rem; }
-
-        input {
-            width: 80%;
-            padding: 14px;
-            margin: 10px 0;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: 0.3s;
-        }
-
-        input:focus { border-color: var(--primary); outline: none; }
-
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px 32px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: 0.3s;
-            margin: 8px;
-        }
-
-        button:hover {
-            background: #0056e0;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,97,255,0.2);
-        }
-
-        .grid-layout {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .btn-student {
-            background: var(--white);
-            color: var(--primary);
-            border: 2px solid var(--primary);
-        }
-
-        .btn-student:hover { background: var(--primary); color: white; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 25px;
-            background: #fff;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        th { background: var(--primary); color: white; padding: 15px; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; }
-
-        .chart-wrapper { height: 350px; margin-top: 30px; }
-
-        /* Admin Layout */
-        .admin-item {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border-left: 5px solid var(--primary);
-            text-align: left;
-        }
-
-        .admin-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 5px;
-        }
-
-        .admin-row input { margin: 0; padding: 8px; }
-
-        .settings-icon {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: #334155;
-            color: white;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            transition: 0.3s;
-        }
-
-        .settings-icon:hover { transform: rotate(90deg); background: #1e293b; }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: var(--secondary);
-            cursor: pointer;
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="screen-login" class="card">
-        <i class="fas fa-user-shield fa-3x" style="color: var(--primary); margin-bottom: 1rem;"></i>
-        <h1>System Login</h1>
-        <input type="password" id="pass-main" placeholder="Enter Password">
-        <br>
-        <button onclick="handleLogin()">Sign In</button>
-    </div>
-
-    <div id="screen-landing" class="card hidden">
-        <h1>Welcome Back</h1>
-        <p>ကျောင်းသားများ၏ အမှတ်စာရင်းကို ကြည့်ရှုရန် အောက်ပါခလုတ်ကို နှိပ်ပါ။</p>
-        <button onclick="navigate('screen-list')">
-            <i class="fas fa-list-check"></i> အမှတ်စာရင်းကြည့်မယ်
-        </button>
-    </div>
-
-    <div id="screen-list" class="card hidden">
-        <h2>ကျောင်းသားရွေးချယ်ပါ</h2>
-        <div class="grid-layout" id="student-container"></div>
-        <div class="back-link" onclick="navigate('screen-landing')">Back to Menu</div>
-    </div>
-
-    <div id="screen-result" class="card hidden">
-        <h2 id="display-name" style="color: var(--primary);"></h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>No.</th>
-                    <th>Exam Serial No.</th>
-                    <th>Marks</th>
-                </tr>
-            </thead>
-            <tbody id="table-results"></tbody>
-        </table>
-        <div class="chart-wrapper">
-            <canvas id="chart-marks"></canvas>
-        </div>
-        <div class="back-link" onclick="navigate('screen-list')">Back to List</div>
-    </div>
-
-    <div id="screen-admin" class="card hidden">
-        <h2>Admin Management</h2>
-        <div id="admin-inputs" style="max-height: 450px; overflow-y: auto; padding-right: 10px;"></div>
-        <br>
-        <button onclick="syncData()">Save & Upload to Sheets</button>
-        <button onclick="navigate('screen-landing')" style="background: var(--danger);">Cancel</button>
-    </div>
-
-    <div class="settings-icon" onclick="handleAdminAuth()">
-        <i class="fas fa-cog fa-lg"></i>
-    </div>
-
-    <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbxqh-Yp5z9crleItXCMiqlSSHGFOMMy8EvmNY9m_GrPF-_0wB7pCZaprFzEqiT4QmToQg/exec';
-        let currentChart = null;
-        
-        // Initial Data Structure
-        let students = [
-            { name: "Synwal", exams: [{no: 1, serial: "", mark: 0}, {no: 2, serial: "", mark: 0}] },
-            { name: "Myat Min Ko Ko", exams: [{no: 1, serial: "", mark: 0}, {no: 2, serial: "", mark: 0}] },
-            { name: "Bhone Myat Aung", exams: [{no: 1, serial: "", mark: 0}, {no: 2, serial: "", mark: 0}] }
-        ];
-
-        // 1. Authentication
-        function handleLogin() {
-            if (document.getElementById('pass-main').value === 'math2026') {
-                navigate('screen-landing');
-            } else { alert('Password မမှန်ကန်ပါ။'); }
-        }
-
-        function handleAdminAuth() {
-            const adminPass = prompt("Admin Password (bumblebee) ကို ရိုက်ထည့်ပါ:");
-            if (adminPass === 'bumblebee') {
-                renderAdmin();
-                navigate('screen-admin');
-            } else if (adminPass !== null) { alert('Admin Password မှားယွင်းနေပါသည်။'); }
-        }
-
-        // 2. Navigation
-        function navigate(id) {
-            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            if (id === 'screen-list') renderStudentButtons();
-        }
-
-        // 3. UI Rendering
-        function renderStudentButtons() {
-            const container = document.getElementById('student-container');
-            container.innerHTML = '';
-            students.forEach((s, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'btn-student';
-                btn.innerHTML = `<i class="fas fa-user"></i> ${s.name}`;
-                btn.onclick = () => showDetails(idx);
-                container.appendChild(btn);
-            });
-        }
-
-        function showDetails(idx) {
-            const s = students[idx];
-            navigate('screen-result');
-            document.getElementById('display-name').innerText = s.name;
-            
-            const tbody = document.getElementById('table-results');
-            tbody.innerHTML = '';
-            s.exams.forEach(ex => {
-                tbody.innerHTML += `<tr><td>${ex.no}</td><td>${ex.serial}</td><td>${ex.mark}</td></tr>`;
-            });
-
-            renderChart(s);
-        }
-
-        function renderChart(student) {
-            const ctx = document.getElementById('chart-marks').getContext('2d');
-            if (currentChart) currentChart.destroy();
-            
-            currentChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: student.exams.map(ex => ex.serial || `Exam ${ex.no}`),
-                    datasets: [{
-                        label: 'ရရှိမှတ်',
-                        data: student.exams.map(ex => ex.mark),
-                        backgroundColor: 'rgba(0, 97, 255, 0.7)',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, max: 100 } }
-                }
-            });
-        }
-
-        // 4. Admin Management
-        function renderAdmin() {
-            const container = document.getElementById('admin-inputs');
-            container.innerHTML = '';
-            students.forEach((s, sIdx) => {
-                let html = `<div class="admin-item"><strong>${s.name}</strong>`;
-                s.exams.forEach((ex, eIdx) => {
-                    html += `
-                        <div class="admin-row">
-                            <span>${ex.no}.</span>
-                            <input type="text" id="s-${sIdx}-${eIdx}" value="${ex.serial}" placeholder="Serial No">
-                            <input type="number" id="m-${sIdx}-${eIdx}" value="${ex.mark}" placeholder="Mark" style="width:70px">
-                        </div>`;
-                });
-                html += `</div>`;
-                container.innerHTML += html;
-            });
-        }
-
-        async function syncData() {
-            // Update local state
-            students.forEach((s, sIdx) => {
-                s.exams.forEach((ex, eIdx) => {
-                    ex.serial = document.getElementById(`s-${sIdx}-${eIdx}`).value;
-                    ex.mark = parseInt(document.getElementById(`m-${sIdx}-${eIdx}`).value) || 0;
-                });
-            });
-
-            // Post to Google Sheets
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Apps Script requires no-cors often for simple POSTs
-                    cache: 'no-cache',
-                    body: JSON.stringify(students)
-                });
-                alert("ဒေတာများကို Google Sheet သို့ အောင်မြင်စွာ တင်ပြီးပါပြီ။");
-                navigate('screen-landing');
-            } catch (error) {
-                console.error('Error:', error);
-                alert("သိမ်းဆည်းရာတွင် အမှားအယွင်းရှိခဲ့ပါသည်။");
-            }
-        }
-    </script>
-</body>
-</html>
+function getData() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var rows = sheet.getDataRange().getValues();
+  var studentsMap = {};
+  
+  for (var i = 1; i < rows.length; i++) {
+    var name = rows[i][0];
+    // Student data ကို structure ပြန်ဖွဲ့ခြင်း
+    if (!studentsMap[name]) {
+      studentsMap[name] = { name: name, exams: [] };
+    }
+    studentsMap[name].exams.push({
+      no: rows[i][1],
+      serial: rows[i][2],
+      mark: rows[i][3]
+    });
+  }
+  return Object.values(studentsMap);
+}
