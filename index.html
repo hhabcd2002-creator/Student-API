@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #1e3a8a;
+            --accent-blue: #3b82f6;
+            --light-blue: #dbeafe;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        .card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            width: 90%;
+            max-width: 700px;
+            text-align: center;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden { display: none !important; }
+
+        h2 { color: var(--primary-blue); margin-bottom: 1.5rem; }
+
+        input {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px;
+            margin: 15px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--accent-blue); outline: none; }
+
+        button {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            margin: 5px;
+        }
+
+        button:hover { background: var(--accent-blue); transform: translateY(-2px); }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .chart-box {
+            margin-top: 25px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 15px;
+            height: 350px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th { background: var(--primary-blue); color: white; padding: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; background: #fff; }
+
+        .settings-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: #334155;
+            color: white;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: 0.3s;
+        }
+
+        .settings-btn:hover { transform: rotate(90deg); background: var(--primary-blue); }
+
+        .admin-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .admin-row input { width: 80px; margin: 5px; }
+        .admin-row input[type="text"] { width: 150px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="card">
+        <i class="fas fa-lock" style="font-size: 3rem; color: var(--accent-blue); margin-bottom: 1rem;"></i>
+        <h2>Access Restricted</h2>
+        <input type="password" id="mainPass" placeholder="Enter Password">
+        <br>
+        <button onclick="checkLogin()">Login</button>
+    </div>
+
+    <div id="landing-screen" class="card hidden">
+        <h2>Dashboard</h2>
+        <button onclick="navTo('student-list-screen')" style="padding: 20px 40px; font-size: 1.2rem;">
+            <i class="fas fa-graduation-cap"></i> အမှတ်စာရင်းကြည့်မယ်
+        </button>
+    </div>
+
+    <div id="student-list-screen" class="card hidden">
+        <h2>ကျောင်းသားရွေးချယ်ပါ</h2>
+        <div class="student-grid" id="studentButtons"></div>
+        <br>
+        <button onclick="navTo('landing-screen')" style="background:#64748b;">Back</button>
+    </div>
+
+    <div id="dashboard-screen" class="card hidden">
+        <h2 id="studentTitle">Score</h2>
+        <table>
+            <thead>
+                <tr><th>Myanmar</th><th>English</th><th>Math</th><th>Total</th></tr>
+            </thead>
+            <tbody id="scoreTable"></tbody>
+        </table>
+        <div class="chart-box">
+            <canvas id="gradeChart"></canvas>
+        </div>
+        <br>
+        <button onclick="navTo('student-list-screen')" style="background:#64748b;">Back</button>
+    </div>
+
+    <div id="admin-screen" class="card hidden">
+        <h2>Admin Settings</h2>
+        <div id="adminInputs"></div>
+        <br>
+        <button onclick="saveData()">Update & Sync to Cloud</button>
+        <button onclick="navTo('landing-screen')" style="background:#64748b;">Cancel</button>
+    </div>
+
+    <div class="settings-btn" id="gear" onclick="adminAuth()">
+        <i class="fas fa-cog fa-lg"></i>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwkDYoKVHVwOpfC6arfYSRCawO9CeAoggE24DGXezRaeamzTmCyZ1ebxRRgJR6TUzMG1Q/exec";
+        
+        let students = [
+            { name: "Synwal", myanmar: 0, english: 0, math: 0 },
+            { name: "Myat Min Ko Ko", myanmar: 0, english: 0, math: 0 },
+            { name: "Bhone Myat Aung", myanmar: 0, english: 0, math: 0 }
+        ];
+
+        let chartInstance = null;
+
+        function navTo(screenId) {
+            document.querySelectorAll('.card').forEach(c => c.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+            if(screenId === 'student-list-screen') renderStudentButtons();
+        }
+
+        function checkLogin() {
+            if(document.getElementById('mainPass').value === 'math2026') navTo('landing-screen');
+            else alert("Password မှားယွင်းနေပါသည်။");
+        }
+
+        function adminAuth() {
+            const pw = prompt("Admin Password ကိုရိုက်ထည့်ပါ:");
+            if(pw === 'bumblebee') {
+                navTo('admin-screen');
+                renderAdminForm();
+            } else if(pw) { alert("Admin Password မှားယွင်းနေပါသည်။"); }
+        }
+
+        function renderStudentButtons() {
+            const container = document.getElementById('studentButtons');
+            container.innerHTML = '';
+            students.forEach((s, i) => {
+                const btn = document.createElement('button');
+                btn.innerHTML = `<i class="fas fa-user"></i> ${s.name}`;
+                btn.onclick = () => showStudentDetail(i);
+                container.appendChild(btn);
+            });
+        }
+
+        function showStudentDetail(index) {
+            const s = students[index];
+            navTo('dashboard-screen');
+            document.getElementById('studentTitle').innerText = s.name;
+            const total = s.myanmar + s.english + s.math;
+            document.getElementById('scoreTable').innerHTML = `
+                <tr>
+                    <td>${s.myanmar}</td>
+                    <td>${s.english}</td>
+                    <td>${s.math}</td>
+                    <td><strong>${total}</strong></td>
+                </tr>`;
+
+            if(chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('gradeChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Myanmar', 'English', 'Math'],
+                    datasets: [{
+                        label: 'ရမှတ်',
+                        data: [s.myanmar, s.english, s.math],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                        borderRadius: 8
+                    }]
+                },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+        }
+
+        function renderAdminForm() {
+            const container = document.getElementById('adminInputs');
+            container.innerHTML = '';
+            students.forEach((s, i) => {
+                container.innerHTML += `
+                    <div class="admin-row">
+                        <input type="text" id="name${i}" value="${s.name}" readonly>
+                        <input type="number" id="m${i}" value="${s.myanmar}" placeholder="Myan">
+                        <input type="number" id="e${i}" value="${s.english}" placeholder="Eng">
+                        <input type="number" id="ma${i}" value="${s.math}" placeholder="Math">
+                    </div>`;
+            });
+        }
+
+        async function saveData() {
+            students.forEach((s, i) => {
+                s.myanmar = parseInt(document.getElementById(`m${i}`).value) || 0;
+                s.english = parseInt(document.getElementById(`e${i}`).value) || 0;
+                s.math = parseInt(document.getElementById(`ma${i}`).value) || 0;
+            });
+
+            const btn = event.target;
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Apps Script requires no-cors often
+                    body: JSON.stringify(students),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                alert("Data saved and synced to Google Sheets!");
+            } catch (e) {
+                console.error(e);
+                alert("Cloud Sync Error (Check console)");
+            } finally {
+                btn.innerText = "Update & Sync to Cloud";
+                btn.disabled = false;
+                navTo('landing-screen');
+            }
+        }
+    </script>
+</body>
+</html>
