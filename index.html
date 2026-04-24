@@ -3,68 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Marks Dashboard</title>
+    <title>Student Data Secure System</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --main-blue: #0062ff; --soft-blue: #eef4ff; --dark-blue: #0046b8; --bg: #f8fafc; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 800px; text-align: center; }
+        .card { background: white; padding: 2.5rem; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); width: 100%; max-width: 850px; text-align: center; }
         .hidden { display: none !important; }
-        input { padding: 10px; margin: 5px; border: 2px solid #e2e8f0; border-radius: 8px; outline: none; }
-        button { background: var(--main-blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; margin: 5px; }
-        button:hover { background: var(--dark-blue); }
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; border-radius: 10px; overflow: hidden; }
-        th { background: var(--main-blue); color: white; padding: 15px; }
-        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
-        .admin-section { text-align: left; background: #fdfdfd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #edf2f7; }
-        .admin-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .add-btn { background: #10b981; font-size: 0.8rem; margin-top: 10px; }
-        .settings-btn { position: fixed; bottom: 25px; right: 25px; background: #334155; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        input { padding: 12px; margin: 5px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--main-blue); }
+        button { background: var(--main-blue); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.3s; margin: 5px; }
+        button:hover { background: var(--dark-blue); transform: translateY(-2px); }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        th { background: var(--main-blue); color: white; padding: 18px; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: 500; }
+        .admin-section { text-align: left; background: #fff; padding: 20px; border-radius: 15px; margin-bottom: 25px; border: 1px solid #e2e8f0; }
+        .admin-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .add-btn { background: #10b981; font-size: 0.85rem; }
+        .settings-btn { position: fixed; bottom: 30px; right: 30px; background: #1e293b; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 999; }
+        .loading { color: var(--main-blue); font-weight: bold; margin: 10px; }
     </style>
 </head>
 <body>
 
+    <div id="loader" class="hidden loading" style="position: fixed; top: 20px;">Updating Cloud...</div>
+
     <div id="login-screen" class="card">
-        <h2>Security Access</h2>
+        <h2 style="color: var(--main-blue);">Security Access</h2>
+        <p>Please enter the code to access the dashboard.</p>
         <input type="password" id="mainPass" placeholder="Password">
-        <br><button onclick="checkLogin()">Login</button>
+        <br><button onclick="checkLogin()">Enter Dashboard</button>
     </div>
 
     <div id="landing-screen" class="card hidden">
-        <h1>Dashboard</h1>
-        <button onclick="showStudentList()" style="padding: 15px 30px;">အမှတ်စာရင်းကြည့်မယ်</button>
+        <h1>Welcome Back</h1>
+        <p id="data-status" style="color: #64748b; margin-bottom: 20px;">Syncing with Cloud...</p>
+        <button onclick="showStudentList()" style="padding: 18px 40px; font-size: 1.1rem;">အမှတ်စာရင်းကြည့်မယ်</button>
     </div>
 
     <div id="list-screen" class="card hidden">
-        <h2>ကျောင်းသားရွေးချယ်ပါ</h2>
+        <h2>ကျောင်းသားအမည် ရွေးချယ်ပါ</h2>
         <div class="grid-container" id="studentBtnGroup"></div>
-        <br><button onclick="goBack('landing-screen')" style="background:#64748b;">နောက်သို့</button>
+        <br><button onclick="goBack('landing-screen')" style="background:#64748b; margin-top:20px;">Home</button>
     </div>
 
     <div id="result-screen" class="card hidden">
-        <h2 id="currentStudentName" style="color: var(--main-blue);"></h2>
+        <h2 id="currentStudentName" style="color: var(--main-blue); margin-bottom: 10px;"></h2>
         <table>
             <thead><tr><th>No</th><th>Exam Serial No</th><th>Marks</th></tr></thead>
             <tbody id="resultBody"></tbody>
         </table>
-        <div style="height:300px; margin-top:20px;"><canvas id="markChart"></canvas></div>
-        <br><button onclick="goBack('list-screen')" style="background:#64748b;">နောက်သို့</button>
+        <div style="height:350px; margin-top:25px;"><canvas id="markChart"></canvas></div>
+        <br><button onclick="goBack('list-screen')" style="background:#64748b;">Back</button>
     </div>
 
     <div id="admin-screen" class="card hidden">
         <h2>Admin Management</h2>
-        <div id="adminFields" style="max-height: 500px; overflow-y: auto;"></div>
+        <div id="adminFields" style="max-height: 550px; overflow-y: auto; padding-right: 10px;"></div>
         <br>
-        <button onclick="uploadToSheets()">Save & Upload</button>
-        <button onclick="goBack('landing-screen')" style="background:#ef4444;">Cancel</button>
+        <button onclick="uploadToSheets()">Save Forever to Cloud</button>
+        <button onclick="goBack('landing-screen')" style="background:#ef4444;">Discard Changes</button>
     </div>
 
-    <div class="settings-btn" onclick="openAdmin()"><i class="fas fa-cog"></i></div>
+    <div class="settings-btn" onclick="openAdmin()"><i class="fas fa-cog fa-lg"></i></div>
 
     <script>
+        // *** သင်ရလာတဲ့ URL ကို ဒီမှာ မဖြစ်မနေ အစားထိုးပါ ***
         const SCRIPT_URL = 'မင်းရဲ့_URL_ဒီမှာထည့်ပါ'; 
+
         let students = [
             { name: "Synwal", exams: [{no:1, serial: "", mark: 0}] },
             { name: "Myat Min Ko Ko", exams: [{no:1, serial: "", mark: 0}] },
@@ -72,19 +80,33 @@
         ];
         let currentChart = null;
 
-        function checkLogin() {
-            if (document.getElementById('mainPass').value === 'math2026') switchScreen('landing-screen');
-            else alert('မှားယွင်းနေပါသည်');
+        // Login & Cloud Sync
+        async function checkLogin() {
+            if (document.getElementById('mainPass').value === 'math2026') {
+                switchScreen('landing-screen');
+                await syncFromCloud();
+            } else alert('Password မှားယွင်းနေပါသည်။');
+        }
+
+        async function syncFromCloud() {
+            if(SCRIPT_URL === 'မင်းရဲ့_URL_ဒီမှာထည့်ပါ') return;
+            document.getElementById('data-status').innerText = "☁️ Data is Synced with Google Sheets";
+            try {
+                const res = await fetch(SCRIPT_URL + "?action=getData");
+                const cloudData = await res.json();
+                if(cloudData && cloudData.length > 0) {
+                    students = cloudData; // Cloud က ဒေတာနဲ့ အစားထိုးလိုက်ခြင်း (မပျက်တော့ပါ)
+                }
+            } catch(e) { console.error("Cloud Error", e); }
         }
 
         function openAdmin() {
-            if (prompt("Admin Password:") === 'bumblebee') {
+            if (prompt("Admin Password (bumblebee):") === 'bumblebee') {
                 switchScreen('admin-screen');
                 renderAdmin();
             }
         }
 
-        // ကျောင်းသားတစ်ယောက်ချင်းစီအတွက် Row အသစ်တိုးပေးတဲ့ Function
         function addExamRow(sIdx) {
             const nextNo = students[sIdx].exams.length + 1;
             students[sIdx].exams.push({no: nextNo, serial: "", mark: 0});
@@ -96,17 +118,23 @@
             container.innerHTML = '';
             students.forEach((s, sIdx) => {
                 let html = `<div class="admin-section">
-                    <h4 style="color:var(--main-blue)">${s.name}</h4>`;
+                    <h4 style="color:var(--main-blue); border-bottom: 2px solid var(--soft-blue); padding-bottom: 8px;">${s.name}</h4>`;
                 s.exams.forEach((ex, eIdx) => {
                     html += `<div class="admin-row">
                         <span>${ex.no}.</span>
-                        <input type="text" value="${ex.serial}" onchange="updateData(${sIdx}, ${eIdx}, 'serial', this.value)" placeholder="Serial No">
-                        <input type="number" value="${ex.mark}" onchange="updateData(${sIdx}, ${eIdx}, 'mark', this.value)" placeholder="Mark" style="width:80px;">
+                        <input type="text" value="${ex.serial}" onchange="updateData(${sIdx}, ${eIdx}, 'serial', this.value)" placeholder="Exam Name">
+                        <input type="number" value="${ex.mark}" onchange="updateData(${sIdx}, ${eIdx}, 'mark', this.value)" placeholder="Mark" style="width:85px;">
+                        <button onclick="removeRow(${sIdx}, ${eIdx})" style="background:none; color:#ef4444; padding:5px;"><i class="fas fa-trash"></i></button>
                     </div>`;
                 });
                 html += `<button class="add-btn" onclick="addExamRow(${sIdx})">+ Add Exam No. ${s.exams.length + 1}</button></div>`;
                 container.innerHTML += html;
             });
+        }
+
+        function removeRow(sIdx, eIdx) {
+            students[sIdx].exams.splice(eIdx, 1);
+            renderAdmin();
         }
 
         function updateData(sIdx, eIdx, field, val) {
@@ -115,10 +143,18 @@
         }
 
         async function uploadToSheets() {
-            alert("Saving Data...");
+            document.getElementById('loader').classList.remove('hidden');
             if(SCRIPT_URL !== 'မင်းရဲ့_URL_ဒီမှာထည့်ပါ') {
-                await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(students) });
+                try {
+                    await fetch(SCRIPT_URL, { 
+                        method: 'POST', 
+                        mode: 'no-cors',
+                        body: JSON.stringify(students) 
+                    });
+                    alert("Cloud ပေါ်သို့ ဒေတာများ လုံခြုံစွာ သိမ်းဆည်းပြီးပါပြီ!");
+                } catch(e) { alert("Error connecting to Cloud."); }
             }
+            document.getElementById('loader').classList.add('hidden');
             switchScreen('landing-screen');
         }
 
@@ -128,8 +164,8 @@
             group.innerHTML = '';
             students.forEach((s, idx) => {
                 const btn = document.createElement('button');
-                btn.innerText = s.name;
-                btn.style.padding = '20px';
+                btn.innerHTML = `<i class="fas fa-user-graduate"></i><br>${s.name}`;
+                btn.style.height = '100px';
                 btn.onclick = () => showResult(idx);
                 group.appendChild(btn);
             });
@@ -142,17 +178,32 @@
             const body = document.getElementById('resultBody');
             body.innerHTML = '';
             s.exams.forEach(ex => {
-                body.innerHTML += `<tr><td>${ex.no}</td><td>${ex.serial}</td><td>${ex.mark}</td></tr>`;
+                body.innerHTML += `<tr><td>${ex.no}</td><td>${ex.serial}</td><td style="color:var(--main-blue); font-weight:bold;">${ex.mark}</td></tr>`;
             });
 
             if (currentChart) currentChart.destroy();
             currentChart = new Chart(document.getElementById('markChart'), {
-                type: 'bar',
+                type: 'line',
                 data: {
-                    labels: s.exams.map(ex => ex.serial || `No.${ex.no}`),
-                    datasets: [{ label: 'Marks', data: s.exams.map(ex => ex.mark), backgroundColor: '#0062ff' }]
+                    labels: s.exams.map(ex => ex.serial || `Ex-${ex.no}`),
+                    datasets: [{ 
+                        label: 'Performance Trend', 
+                        data: s.exams.map(ex => ex.mark), 
+                        borderColor: '#0062ff',
+                        backgroundColor: 'rgba(0, 98, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 3
+                    }]
                 },
-                options: { maintainAspectRatio: false }
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100 } }
+                }
             });
         }
 
