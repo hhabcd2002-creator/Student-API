@@ -3,62 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Student Dashboard</title>
+    <title>Student Performance Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --main-blue: #0062ff; --soft-blue: #eef4ff; --dark-blue: #0046b8; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .card { background: white; padding: 2.5rem; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); width: 100%; max-width: 850px; text-align: center; position: relative; }
+        :root { --blue: #0062ff; --dark: #1e293b; --green: #10b981; --red: #ef4444; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 800px; text-align: center; }
         .hidden { display: none !important; }
-        input { padding: 12px; margin: 5px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; }
-        button { background: var(--main-blue); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.3s; margin: 5px; }
-        button:hover { background: var(--dark-blue); }
-        
-        /* Modal Style for Admin Password */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 25px; border-radius: 12px; overflow: hidden; }
-        th { background: var(--main-blue); color: white; padding: 18px; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; text-align: center; }
-        .admin-section { text-align: left; background: #fff; padding: 20px; border-radius: 15px; margin-bottom: 25px; border: 1px solid #e2e8f0; }
-        .admin-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .settings-btn { position: fixed; bottom: 30px; right: 30px; background: #1e293b; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 999; }
+        input { padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; margin: 5px; width: calc(100% - 30px); max-width: 300px; }
+        button { background: var(--blue); color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; margin: 5px; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; border-radius: 10px; overflow: hidden; }
+        th { background: var(--blue); color: white; padding: 15px; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; }
+        .status-msg { padding: 15px; margin: 15px 0; border-radius: 10px; font-weight: bold; }
+        .status-success { background: #dcfce7; color: var(--green); border: 1px solid var(--green); }
+        .status-error { background: #fee2e2; color: var(--red); border: 1px solid var(--red); }
+        .admin-section { text-align: left; background: #fdfdfd; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #edf2f7; }
+        .settings-btn { position: fixed; bottom: 25px; right: 25px; background: var(--dark); color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
     <div id="admin-modal" class="modal hidden">
         <div class="modal-content">
-            <h3 style="margin-bottom:15px;">Admin Login</h3>
-            <input type="password" id="adminPassInput" placeholder="Enter Admin Password">
+            <h3>Admin Login</h3>
+            <input type="password" id="adminPassInput" placeholder="Password (****)">
             <br>
             <button onclick="confirmAdminLogin()">Login</button>
-            <button onclick="closeAdminModal()" style="background:#64748b;">Cancel</button>
+            <button onclick="closeAdminModal()" style="background:#64748b;">Close</button>
         </div>
     </div>
 
     <div id="login-screen" class="card">
-        <h2 style="color: var(--main-blue);">Security Access</h2>
-        <input type="password" id="mainPass" placeholder="Main Password">
-        <br><button onclick="checkLogin()">Enter Dashboard</button>
+        <h2 style="color: var(--blue);">Student Database</h2>
+        <p>Please log in to continue</p>
+        <input type="password" id="mainPass" placeholder="Dashboard Password">
+        <br><button onclick="checkLogin()">Enter</button>
     </div>
 
     <div id="landing-screen" class="card hidden">
         <h1>Dashboard</h1>
-        <p id="data-status">Syncing with Cloud...</p>
-        <button onclick="showStudentList()" style="padding: 18px 40px;">အမှတ်စာရင်းကြည့်မယ်</button>
+        <p id="cloud-status" style="color: #64748b;">Checking connection...</p>
+        <button onclick="showStudentList()" style="padding: 20px 40px; font-size: 1.1rem;">အမှတ်စာရင်းကြည့်မယ်</button>
     </div>
 
     <div id="list-screen" class="card hidden">
-        <h2>ကျောင်းသားအမည် ရွေးချယ်ပါ</h2>
+        <h2>ကျောင်းသားရွေးချယ်ပါ</h2>
         <div id="studentBtnGroup" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;"></div>
-        <br><button onclick="goBack('landing-screen')" style="background:#64748b;">Home</button>
+        <br><button onclick="goBack('landing-screen')" style="background:#64748b;">Back</button>
     </div>
 
     <div id="result-screen" class="card hidden">
-        <h2 id="currentStudentName" style="color: var(--main-blue);"></h2>
+        <h2 id="currentStudentName" style="color: var(--blue);"></h2>
         <table>
             <thead><tr><th>No</th><th>Exam Serial No</th><th>Marks</th></tr></thead>
             <tbody id="resultBody"></tbody>
@@ -69,57 +69,55 @@
 
     <div id="admin-screen" class="card hidden">
         <h2>Admin Management</h2>
+        <div id="save-status"></div>
         <div id="adminFields" style="max-height: 500px; overflow-y: auto;"></div>
         <br>
-        <button onclick="uploadToSheets()">Save Forever to Cloud</button>
-        <button onclick="goBack('landing-screen')" style="background:#ef4444;">Discard Changes</button>
+        <button id="saveBtn" onclick="uploadToSheets()">သိမ်းဆည်းမည်</button>
+        <button onclick="goBack('landing-screen')" style="background:#64748b;">Cancel</button>
     </div>
 
-    <div class="settings-btn" onclick="openAdminModal()"><i class="fas fa-cog fa-lg"></i></div>
+    <div class="settings-btn" onclick="openAdminModal()"><i class="fas fa-cog"></i></div>
 
     <script>
-        const SCRIPT_URL = 'မင်းရဲ့_URL_ဒီမှာထည့်ပါ'; 
-        let students = [
-            { name: "Synwal", exams: [{no:1, serial: "", mark: 0}] },
-            { name: "Myat Min Ko Ko", exams: [{no:1, serial: "", mark: 0}] },
-            { name: "Bhone Myat Aung", exams: [{no:1, serial: "", mark: 0}] }
-        ];
-        let currentChart = null;
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaqdzQeBcxW41aG_MagVbq072O8wx4kKK9w3b1sUg7befZSaXRkZhNT8-imiM7HSHoEA/exec';
 
-        // Admin Modal Functions
-        function openAdminModal() { document.getElementById('admin-modal').classList.remove('hidden'); }
-        function closeAdminModal() { document.getElementById('admin-modal').classList.add('hidden'); document.getElementById('adminPassInput').value = ''; }
-        
-        function confirmAdminLogin() {
-            const pass = document.getElementById('adminPassInput').value;
-            if (pass === 'bumblebee') {
-                closeAdminModal();
-                switchScreen('admin-screen');
-                renderAdmin();
-            } else { alert('မှားယွင်းနေပါသည်။'); }
-        }
+        let students = [
+            { name: "Synwal", exams: [{no:1, serial: "Exam-1", mark: 0}] },
+            { name: "Myat Min Ko Ko", exams: [{no:1, serial: "Exam-1", mark: 0}] },
+            { name: "Bhone Myat Aung", exams: [{no:1, serial: "Exam-1", mark: 0}] }
+        ];
+
+        let currentChart = null;
 
         async function checkLogin() {
             if (document.getElementById('mainPass').value === 'math2026') {
                 switchScreen('landing-screen');
-                await syncFromCloud();
+                await loadFromCloud();
             } else alert('Password မှားယွင်းနေပါသည်။');
         }
 
-        async function syncFromCloud() {
-            if(SCRIPT_URL === 'မင်းရဲ့_URL_ဒီမှာထည့်ပါ') return;
+        async function loadFromCloud() {
             try {
                 const res = await fetch(SCRIPT_URL + "?action=getData");
-                const cloudData = await res.json();
-                if(cloudData && cloudData.length > 0) students = cloudData;
-                document.getElementById('data-status').innerText = "☁️ Data Synced";
-            } catch(e) { console.error(e); }
+                const data = await res.json();
+                if(data && data.length > 0) {
+                    students = data;
+                    document.getElementById('cloud-status').innerText = "☁️ ဒေတာများကို Cloud မှ ရယူထားပြီးပါပြီ။";
+                }
+            } catch(e) {
+                document.getElementById('cloud-status').innerText = "📂 Cloud နှင့် ချိတ်ဆက်မရပါ။ Excel ဒေတာကို သုံးနေသည်။";
+            }
         }
 
-        function addExamRow(sIdx) {
-            const nextNo = students[sIdx].exams.length + 1;
-            students[sIdx].exams.push({no: nextNo, serial: "", mark: 0});
-            renderAdmin();
+        function openAdminModal() { document.getElementById('admin-modal').classList.remove('hidden'); }
+        function closeAdminModal() { document.getElementById('admin-modal').classList.add('hidden'); document.getElementById('adminPassInput').value = ''; }
+
+        function confirmAdminLogin() {
+            if (document.getElementById('adminPassInput').value === 'bumblebee') {
+                closeAdminModal();
+                switchScreen('admin-screen');
+                renderAdmin();
+            } else alert('Admin Password မှားယွင်းနေပါသည်။');
         }
 
         function renderAdmin() {
@@ -128,28 +126,40 @@
             students.forEach((s, sIdx) => {
                 let html = `<div class="admin-section"><h4>${s.name}</h4>`;
                 s.exams.forEach((ex, eIdx) => {
-                    html += `<div class="admin-row">
-                        <span>${ex.no}.</span>
-                        <input type="text" value="${ex.serial}" onchange="updateData(${sIdx}, ${eIdx}, 'serial', this.value)" placeholder="Exam Name">
-                        <input type="number" value="${ex.mark}" onchange="updateData(${sIdx}, ${eIdx}, 'mark', this.value)" style="width:80px;">
+                    html += `<div style="margin-bottom:8px;">${ex.no}. 
+                        <input type="text" value="${ex.serial}" onchange="students[${sIdx}].exams[${eIdx}].serial=this.value" placeholder="Serial" style="width:120px;"> 
+                        <input type="number" value="${ex.mark}" onchange="students[${sIdx}].exams[${eIdx}].mark=parseInt(this.value)||0" style="width:70px;">
                     </div>`;
                 });
-                html += `<button onclick="addExamRow(${sIdx})" style="background:#10b981; font-size:0.8rem;">+ Add Row</button></div>`;
+                html += `<button onclick="addExam(${sIdx})" style="background:var(--green); font-size:0.8rem;">+ Add Exam</button></div>`;
                 container.innerHTML += html;
             });
         }
 
-        function updateData(sIdx, eIdx, field, val) {
-            if(field === 'mark') students[sIdx].exams[eIdx].mark = parseInt(val) || 0;
-            else students[sIdx].exams[eIdx].serial = val;
+        function addExam(sIdx) {
+            students[sIdx].exams.push({no: students[sIdx].exams.length + 1, serial: "", mark: 0});
+            renderAdmin();
         }
 
         async function uploadToSheets() {
-            if(SCRIPT_URL !== 'မင်းရဲ့_URL_ဒီမှာထည့်ပါ') {
-                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(students) });
-                alert("Saved to Cloud!");
+            const statusDiv = document.getElementById('save-status');
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            statusDiv.innerHTML = '<div class="status-msg">☁️ Cloud ပေါ်သို့ သိမ်းဆည်းနေပါသည်...</div>';
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify(students)
+                });
+                statusDiv.innerHTML = '<div class="status-msg status-success">✅ ဒေတာများကို သိမ်းဆည်းပြီးပါပြီ။</div>';
+                setTimeout(() => { statusDiv.innerHTML = ''; goBack('landing-screen'); }, 2000);
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="status-msg status-error">❌ သိမ်းဆည်းမှု မအောင်မြင်ပါ။ အင်တာနက် ပြန်စစ်ပေးပါ။</div>';
+            } finally {
+                saveBtn.disabled = false;
             }
-            switchScreen('landing-screen');
         }
 
         function showStudentList() {
@@ -172,7 +182,7 @@
             const body = document.getElementById('resultBody');
             body.innerHTML = '';
             s.exams.forEach(ex => {
-                body.innerHTML += `<tr><td>${ex.no}</td><td>${ex.serial}</td><td>${ex.mark}</td></tr>`;
+                body.innerHTML += `<tr><td>${ex.no}</td><td>${ex.serial}</td><td style="font-weight:bold; color:var(--blue);">${ex.mark}</td></tr>`;
             });
 
             if (currentChart) currentChart.destroy();
@@ -180,7 +190,15 @@
                 type: 'line',
                 data: {
                     labels: s.exams.map(ex => ex.serial || `Ex-${ex.no}`),
-                    datasets: [{ label: 'Performance', data: s.exams.map(ex => ex.mark), borderColor: '#0062ff', tension: 0.4, fill: true, backgroundColor: 'rgba(0, 98, 255, 0.1)' }]
+                    datasets: [{ 
+                        label: 'Mark Trend', 
+                        data: s.exams.map(ex => ex.mark), 
+                        borderColor: '#0062ff', 
+                        tension: 0.4, 
+                        fill: true, 
+                        backgroundColor: 'rgba(0, 98, 255, 0.1)',
+                        pointRadius: 5
+                    }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
             });
